@@ -1,0 +1,127 @@
+project_name: jwks-to-pem
+env:
+  - REGISTRY=ghcr.io/sunggun-yu
+  - DESCRIPTION=A simple cli tool to convert jwks to pem
+  - HOMEPAGE=https://github.com/sunggun-yu/jwks-to-pem-cli
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    binary: "{{ .ProjectName }}"
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
+universal_binaries:
+- replace: true
+
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    wrap_in_directory: "true"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - '^chore'
+    - 'merge conflict'
+    - "README"
+    - Merge pull request
+    - Merge remote-tracking branch
+    - Merge branch
+    - go mod tidy
+  groups:
+    - title: Dependency updates
+      regexp: "^.*feat\\(deps\\)*:+.*$"
+      order: 300
+    - title: 'New Features'
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 100
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 200
+    - title: 'Documentation updates'
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 400
+    - title: Other work
+      order: 9999
+
+brews:
+  # https://goreleaser.com/customization/homebrew/
+  - name: "jwks-to-pem"
+    tap:
+      owner: sunggun-yu
+      name: homebrew-tap
+    folder: Formula
+    homepage: '{{ .Env.HOMEPAGE }}'
+    description: '{{ .Env.DESCRIPTION }}'
+
+nfpms:
+  # https://goreleaser.com/customization/nfpm/
+  - homepage: '{{ .Env.HOMEPAGE }}'
+    description: '{{ .Env.DESCRIPTION }}'
+    maintainer: Sunggun Yu <sunggun.dev@gmail.com>
+    license: MIT
+    vendor: Sunggun Yu
+    formats:
+    - apk
+    - deb
+    - rpm
+
+dockers:
+  # https://goreleaser.com/customization/docker/
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile
+    image_templates:
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:latest-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - use: buildx
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:{{ .Version }}-arm64v8"
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:latest-arm64v8"
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+docker_manifests:
+  # https://goreleaser.com/customization/docker_manifest/
+  - name_template: "{{ .Env.REGISTRY }}/{{ .ProjectName }}:{{ .Version }}"
+    image_templates:
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:{{ .Version }}-arm64v8"
+  - name_template: "{{ .Env.REGISTRY }}/{{ .ProjectName }}:latest"
+    image_templates:
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:latest-amd64"
+      - "{{ .Env.REGISTRY }}/{{ .ProjectName }}:latest-arm64v8"
