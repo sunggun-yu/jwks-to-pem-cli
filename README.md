@@ -1,5 +1,7 @@
 # jwks to pem cli
 
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/sunggun-yu/jwks-to-pem-cli/total)
+
 A Simple CLI for converting jwks to pem that is implementing cli functionality using:
 
 - <https://github.com/spf13/cobra>
